@@ -1,0 +1,95 @@
+//in modification.ts file 
+
+import inquirer from 'inquirer';
+import chalk from 'chalk';
+import fs from 'fs';
+
+function countWordsAndCharacters(text: string): { words: number; characters: number } {
+    const words = text.split(/\s+/).filter((word) => word.length > 0).length;
+    const characters = text.replace(/\s+/g, '').length;
+    return { words, characters };
+}
+
+function countUniqueWords(text: string): number {
+    const words = text.split(/\s+/).filter((word) => word.length > 0);
+    const uniqueWords = new Set(words);
+    return uniqueWords.size;
+}
+
+function saveResultsToFile(results: string) {
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'filename',
+                message: 'Enter a filename to save results:',
+            },
+        ])
+        .then((answer) => {
+            fs.writeFile(answer.filename, results, (err) => {
+                if (err) {
+                    console.error(chalk.red('Error saving results:'), err);
+                } else {
+                    console.log(chalk.green('Results saved to file:', answer.filename));
+                    showMenu();
+                }
+            });
+        });
+}
+
+let words: number, characters: number, uniqueWordCount: number;
+
+function showMenu() {
+    inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'menu',
+                message: 'Choose an option:',
+                choices: ['Count another paragraph', 'Save results to a file', 'Exit'],
+            },
+        ])
+        .then((answer) => {
+            if (answer.menu === 'Count another paragraph') {
+                countParagraph();
+            } else if (answer.menu === 'Save results to a file') {
+                saveResultsToFile(
+                    `Word Count: ${words}\nCharacter Count: ${characters}\nUnique Word Count: ${uniqueWordCount}\n`
+                );
+            } else {
+                console.log(chalk.cyan('Goodbye!'));
+            }
+        });
+}
+
+function countParagraph() {
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'text',
+                message: 'Enter an English paragraph:',
+                validate: (input) => {
+                    if (input.trim().length > 0) {
+                        return true;
+                    }
+                    return 'Please enter a non-empty paragraph.';
+                },
+            },
+        ])
+        .then((answers) => {
+            const { text } = answers;
+            const counts = countWordsAndCharacters(text);
+            words = counts.words;
+            characters = counts.characters;
+            uniqueWordCount = countUniqueWords(text);
+
+            console.log(chalk.green('Word Count:'), words);
+            console.log(chalk.blue('Character Count:'), characters);
+            console.log(chalk.yellow('Unique Word Count:'), uniqueWordCount);
+            showMenu();
+        });
+}
+
+// Initial call to countParagraph to start the program
+countParagraph();
